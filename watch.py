@@ -23,23 +23,27 @@ def print_filepaths(req_path, filepaths):
     return None
 
 def main():
-    while True:
-        os.system("cls")
-
-        if (len(sys.argv) > 1):
-            req_path = full_path(sys.argv[1])
-        else:
-            req_path = full_path(os.getcwd())
-
-        filepaths = get_filepaths(req_path)
-        print_filepaths(req_path, filepaths)
-
+    try:
         while True:
-            time.sleep(1)
-            if (filepaths == get_filepaths(req_path)):
-                None
+            os.system("cls")
+
+            if (len(sys.argv) > 1):
+                req_path = full_path(sys.argv[1])
             else:
-                break
+                req_path = full_path(os.getcwd())
+
+            filepaths = get_filepaths(req_path)
+            print_filepaths(req_path, filepaths)
+
+            while True:
+                time.sleep(0.25)
+                if (filepaths == get_filepaths(req_path)):
+                    None
+                else:
+                    break
+
+    except KeyboardInterrupt: # sleep throws this exception if we ctrl+c
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
