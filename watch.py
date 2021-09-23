@@ -25,7 +25,12 @@ def print_filepaths(req_path, filepaths):
 def main():
     while True:
         os.system("cls")
-        req_path = full_path(sys.argv[1])
+
+        if (len(sys.argv) > 1):
+            req_path = full_path(sys.argv[1])
+        else:
+            req_path = full_path(os.getcwd())
+
         filepaths = get_filepaths(req_path)
         print_filepaths(req_path, filepaths)
 
