@@ -1,7 +1,7 @@
 # Watch
 watch a given directory for file changes using the command line, useful for demos
 
-![using watch.py](.screenshot/windows-terminal.png)
+<img width="512px" alt="using watch.py demo" src=".screenshot/demo.gif" />
 
 ## Usage
 ```ps
