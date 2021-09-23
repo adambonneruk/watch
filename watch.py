@@ -1,3 +1,4 @@
+"""watch a given directory for file changes using the command line, useful for demos"""
 import os, sys, re, time
 
 def full_path(path):
@@ -7,6 +8,7 @@ def full_path(path):
     return full_path
 
 def get_filepaths(path):
+    """navigate the supplied path and return all files (including hidden) as list"""
     filepaths = []
 
     for root, dirs, files in os.walk(path):
@@ -16,6 +18,7 @@ def get_filepaths(path):
     return filepaths
 
 def print_filepaths(req_path, filepaths):
+    """pretty print a list of filepaths removing the "root" req_path filepath"""
     for filepath in filepaths:
         pretty_path = filepath[len(req_path):]
         print(pretty_path)
@@ -23,6 +26,7 @@ def print_filepaths(req_path, filepaths):
     return None
 
 def main():
+    """main function, wrapped in a try function to control ctrl+c keyboard excpetion while sleeping"""
     try:
         while True:
             os.system("cls")
