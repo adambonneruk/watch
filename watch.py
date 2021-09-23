@@ -1,0 +1,40 @@
+import os, sys, re, time
+
+def full_path(path):
+    """fixes /'s and used to expand an initial path component ~ to user’s home directory"""
+    full_path = str(os.path.expanduser(path)).replace("/","\\")
+
+    return full_path
+
+def get_filepaths(path):
+    filepaths = []
+
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            filepaths.append(os.path.join(root,file))
+
+    return filepaths
+
+def print_filepaths(req_path, filepaths):
+    for filepath in filepaths:
+        pretty_path = filepath[len(req_path):]
+        print(pretty_path)
+
+    return None
+
+def main():
+    while True:
+        os.system("cls")
+        req_path = full_path(sys.argv[1])
+        filepaths = get_filepaths(req_path)
+        print_filepaths(req_path, filepaths)
+
+        while True:
+            time.sleep(1)
+            if (filepaths == get_filepaths(req_path)):
+                None
+            else:
+                break
+
+if __name__ == "__main__":
+    main()
