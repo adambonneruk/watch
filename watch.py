@@ -56,7 +56,7 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
     return path_and_status_a2z
 
 def main():
-    """main function, wrapped in a try function to control ctrl+c keyboard exception while sleeping"""
+    """main function, prints out the file paths, then starts a loop to check changes before printing"""
 
     # if theres a path passed to the function, use it, otherwise use the current working directory
     if (len(sys.argv) > 1):
@@ -93,4 +93,8 @@ def main():
             pretty_print(path_and_status)
 
 if __name__ == "__main__":
-    main()
+    #main function, wrapped in a try to catch Ctrl + C keyboard exception (while sleeping)
+    try:
+        main()
+    except KeyboardInterrupt: # sleep throws this exception if we Ctrl + C
+        sys.exit(0)
