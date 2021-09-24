@@ -40,7 +40,7 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
         if status == "del":
             path_and_status.update({path:"gon"})
         # ...set everything else now to removed
-        if status == "nod":
+        if status == "nod" or status == "add":
             path_and_status.update({path:"del"})
 
     # look at the new filepath array (path_delta), what is nod and add?
