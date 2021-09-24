@@ -50,7 +50,10 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
         else:
             path_and_status.update({new_path:"add"}) # only new, so add
 
-    return path_and_status
+    # finally sort alphabetically
+    path_and_status_a2z = dict(sorted(path_and_status.items()))
+
+    return path_and_status_a2z
 
 def main():
     """main function, wrapped in a try function to control ctrl+c keyboard exception while sleeping"""
