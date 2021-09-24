@@ -2,8 +2,6 @@
 import os, sys, re, time
 from colour import colourise
 
-tick = 0.25
-
 def full_path(path):
     """fixes /'s and used to expand an initial path component ~ to user’s home directory"""
     full_path = str(os.path.expanduser(path)).replace("/","\\")
@@ -22,6 +20,7 @@ def scan_filepaths(path):
     return filepaths
 
 def pretty_print(pas):
+    """using the colourise function in colour module, print the paths red or green"""
     os.system("cls")
     for path, status in pas.items():
         if status == "add":
@@ -34,6 +33,7 @@ def pretty_print(pas):
             print(colourise(path,"white"))
 
 def update_path_and_statuses(path_and_status, current_paths, new_paths):
+    """update the PaS dictionary with a new set of old and new paths"""
     # look into the dictionary...
     for path, status in path_and_status.items():
         # ...remove really old items (anything that was removed last time)
@@ -80,13 +80,14 @@ def main():
         new_paths = scan_filepaths(req_path)
 
         if paths == new_paths:
-            time.sleep(tick)
+            time.sleep(0.1)
+
         else:
-            # update the dictionary and path list
+            time.sleep(1.5) # whoa theres a difference, lets pause a bit, then scan again
+            new_paths = scan_filepaths(req_path)
             path_and_status = update_path_and_statuses(path_and_status, paths, new_paths)
             paths = new_paths
             pretty_print(path_and_status)
-            time.sleep(tick*10)
 
 if __name__ == "__main__":
     main()
