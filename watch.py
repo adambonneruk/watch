@@ -16,6 +16,9 @@ def scan_filepaths(path):
         for file in files:
             filepath = os.path.join(root,file)
             filepaths.append(filepath[len(path)+1:])
+        for dir in dirs:
+            filepath = os.path.join(root,dir)
+            filepaths.append(filepath[len(path)+1:])
 
     return filepaths
 
