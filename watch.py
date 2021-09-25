@@ -80,8 +80,9 @@ def main():
     for path in paths:
         path_and_status.update({path:"nod"})
 
-    # print the paths
-    pretty_print(path_and_status)
+    # sort and print the paths
+    path_and_status_a2z = dict(sorted(path_and_status.items()))
+    pretty_print(path_and_status_a2z)
 
     while True:
         # while in the loop, scan the filepaths again (new_paths) for a delta comparison
