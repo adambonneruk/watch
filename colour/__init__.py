@@ -1,1 +1,1 @@
-from .colour import colourise
+from .colour import Colour

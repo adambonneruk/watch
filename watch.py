@@ -1,6 +1,6 @@
 """watch a given directory for file changes using the command line, useful for demos"""
 import os, sys, re, time
-from colour import colourise
+from colour import Colour
 
 def full_path(path):
     """fixes /'s and used to expand an initial path component ~ to user’s home directory"""
@@ -24,16 +24,18 @@ def scan_filepaths(path):
 
 def pretty_print(pas):
     """using the colourise function in colour module, print the paths red or green"""
+    colour = Colour()
     os.system("cls")
     for path, status in pas.items():
         if status == "add":
-            print(colourise(path,"green"))
+            colour.print(path,Colour.GREEN)
         elif status == "del":
-            print(colourise(path,"red"))
+            colour.print(path,Colour.RED)
         elif status == "gon":
-            print(colourise(path,"grey"))
+            colour.print(path,Colour.GRAY)
         else:
-            print(colourise(path,"white"))
+            print(path)
+
 
 def update_path_and_statuses(path_and_status, current_paths, new_paths):
     """update the PaS dictionary with a new set of old and new paths"""
