@@ -6,6 +6,10 @@ def full_path(path):
     """fixes /'s and used to expand an initial path component ~ to user’s home directory"""
     full_path = str(os.path.expanduser(path)).replace("/","\\")
 
+    # consistent full path name ending with "/" for pretty print
+    if not full_path[:1] == "/":
+        full_path = full_path + "/"
+
     return full_path
 
 def scan_filepaths(path):
@@ -15,10 +19,10 @@ def scan_filepaths(path):
     for root, dirs, files in os.walk(path):
         for file in files:
             filepath = os.path.join(root,file)
-            filepaths.append(filepath[len(path)+1:])
+            filepaths.append(filepath[len(path):])
         for dir in dirs:
             filepath = os.path.join(root,dir)
-            filepaths.append(filepath[len(path)+1:])
+            filepaths.append(filepath[len(path):] + "\\")
 
     return filepaths
 
@@ -57,7 +61,6 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
 
     # finally sort alphabetically
     path_and_status_a2z = dict(sorted(path_and_status.items()))
-
     return path_and_status_a2z
 
 def main():
