@@ -63,7 +63,7 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
     return path_and_status_a2z
 
 def dir_path(string):
-    if os.path.isdir(string): # also os.path.exists()
+    if os.path.isdir(full_path(string)): # also os.path.exists()
         return string
     else:
         raise NotADirectoryError("Not a Valid Directory")
