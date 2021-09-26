@@ -1,5 +1,5 @@
 """watch a given directory for file changes using the command line, useful for demos"""
-import os, sys, re, time
+import os, sys, time, argparse, math
 from colour import Colour
 
 def full_path(path):
@@ -26,20 +26,19 @@ def scan_filepaths(path):
 
     return filepaths
 
-def pretty_print(pas):
+def pretty_print(path_and_status, verbose: bool):
     """using the colourise function in colour module, print the paths red or green"""
     colour = Colour()
     os.system("cls")
-    for path, status in pas.items():
+    for path, status in path_and_status.items():
         if status == "add":
             colour.print(path,Colour.GREEN)
         elif status == "del":
             colour.print(path,Colour.RED)
-        elif status == "gon":
+        elif status == "gon" and verbose:
             colour.print(path,Colour.GRAY)
-        else:
+        elif status == "nod":
             print(path)
-
 
 def update_path_and_statuses(path_and_status, current_paths, new_paths):
     """update the PaS dictionary with a new set of old and new paths"""
@@ -63,14 +62,43 @@ def update_path_and_statuses(path_and_status, current_paths, new_paths):
     path_and_status_a2z = dict(sorted(path_and_status.items()))
     return path_and_status_a2z
 
+def dir_path(string):
+    if os.path.isdir(string): # also os.path.exists()
+        return string
+    else:
+        raise NotADirectoryError("Not a Valid Directory")
+
 def main():
     """main function, prints out the file paths, then starts a loop to check changes before printing"""
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path',
+                        nargs='?',
+                        type=dir_path,
+                        help='file path to watch (default: current)'
+                        )
+    parser.add_argument('-v', '--verbose',
+                        action='store_true',
+                        dest='verbose',
+                        help='preserve output'
+                        )
+    parser.add_argument('-t', '--tick',
+                        dest='tick',
+                        type=int,
+                        default=1.5,
+                        help='clock (refresh) tick rate'
+                        )
+    args = parser.parse_args()
+
     # if theres a path passed to the function, use it, otherwise use the current working directory
-    if (len(sys.argv) > 1):
-        req_path = full_path(sys.argv[1])
+    if args.path:
+        req_path = full_path(args.path)
     else:
         req_path = full_path(os.getcwd())
+
+    # calculate tick rate for refresh and rescan after difference
+    tick_refresh = math.floor(args.tick)/10
+    tick_rescan = args.tick
 
     # build the dictionary of paths and statuses
     path_and_status = {}
@@ -85,21 +113,21 @@ def main():
 
     # sort and print the paths
     path_and_status_a2z = dict(sorted(path_and_status.items()))
-    pretty_print(path_and_status_a2z)
+    pretty_print(path_and_status_a2z, args.verbose)
 
     while True:
         # while in the loop, scan the filepaths again (new_paths) for a delta comparison
         new_paths = scan_filepaths(req_path)
 
         if paths == new_paths:
-            time.sleep(0.1)
+            time.sleep(tick_refresh)
 
         else:
-            time.sleep(1.5) # whoa theres a difference, lets pause a bit, then scan again
+            time.sleep(tick_rescan) # whoa theres a difference, lets pause a bit, then scan again
             new_paths = scan_filepaths(req_path)
             path_and_status = update_path_and_statuses(path_and_status, paths, new_paths)
             paths = new_paths
-            pretty_print(path_and_status)
+            pretty_print(path_and_status, args.verbose)
 
 if __name__ == "__main__":
     #main function, wrapped in a try to catch Ctrl + C keyboard exception (while sleeping)
