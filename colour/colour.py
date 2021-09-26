@@ -1,4 +1,4 @@
-"""Colour extends the windows terminal with sinple colour printing"""
+"""Colour extends the windows terminal with simple colour printing"""
 class Colour:
     BLACK:int = '30'
     RED:int = '31'
