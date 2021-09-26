@@ -42,5 +42,7 @@ def main():
     colour.print("Gray", Colour.GRAY)
     colour.print("Black", Colour.BLACK)
 
+    print("\n...will you take the " + colour.convert("red pill",Colour.LIGHT_RED) + ", or take the " + colour.convert("blue pill",Colour.LIGHT_BLUE) + "?")
+
 if __name__ == "__main__":
     main()
