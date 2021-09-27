@@ -68,6 +68,16 @@ def dir_path(string):
     else:
         raise NotADirectoryError("Not a Valid Directory")
 
+def reset_pas_dict(path_and_status):
+    for k in path_and_status:
+        if path_and_status[k] == "add" or path_and_status[k] == "nod":
+            path_and_status[k] = "nod"
+        else:
+            path_and_status[k] = "gon"
+
+    path_and_status_a2z = dict(sorted(path_and_status.items()))
+    return path_and_status_a2z
+
 def main():
     """main function, prints out the file paths, then starts a loop to check changes before printing"""
 
@@ -84,7 +94,7 @@ def main():
                         )
     parser.add_argument('-t', '--tick',
                         dest='tick',
-                        type=int,
+                        type=float,
                         default=1.5,
                         help='clock (refresh) tick rate'
                         )
@@ -97,8 +107,8 @@ def main():
         req_path = full_path(os.getcwd())
 
     # calculate tick rate for refresh and rescan after difference
-    tick_refresh = math.floor(args.tick)/10
-    tick_rescan = args.tick
+    tick_refresh:int = math.floor(args.tick)/10
+    tick_rescan:float = args.tick
 
     # build the dictionary of paths and statuses
     path_and_status = {}
@@ -115,19 +125,31 @@ def main():
     path_and_status_a2z = dict(sorted(path_and_status.items()))
     pretty_print(path_and_status_a2z, args.verbose)
 
+    # pre-loop varible initialisation
+    foot_tap:int = 0
+    fresh:bool = False
+
     while True:
         # while in the loop, scan the filepaths again (new_paths) for a delta comparison
         new_paths = scan_filepaths(req_path)
 
-        if paths == new_paths:
-            time.sleep(tick_refresh)
-
-        else:
+        if paths != new_paths:
             time.sleep(tick_rescan) # whoa theres a difference, lets pause a bit, then scan again
             new_paths = scan_filepaths(req_path)
             path_and_status = update_path_and_statuses(path_and_status, paths, new_paths)
-            paths = new_paths
             pretty_print(path_and_status, args.verbose)
+            paths = new_paths
+            fresh = True
+            foot_tap = 0
+
+        else:
+            time.sleep(tick_refresh)
+            foot_tap += 1
+            if fresh and foot_tap == (tick_rescan * 20):
+                path_and_status = reset_pas_dict(path_and_status)
+                pretty_print(path_and_status, args.verbose)
+                foot_tap = 0
+                fresh = False
 
 if __name__ == "__main__":
     #main function, wrapped in a try to catch Ctrl + C keyboard exception (while sleeping)
