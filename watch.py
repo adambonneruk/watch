@@ -1,157 +1,170 @@
 """watch a given directory for file changes using the command line, useful for demos"""
-import os, sys, time, argparse, math
+import os, platform, sys, time, argparse, math, logging
 from colour import Colour
 
-def full_path(path):
-    """fixes /'s and used to expand an initial path component ~ to user’s home directory"""
-    full_path = str(os.path.expanduser(path)).replace("/","\\")
-
-    # consistent full path name ending with "/" for pretty print
-    if not full_path[:1] == "/":
-        full_path = full_path + "/"
-
-    return full_path
-
-def scan_filepaths(path):
-    """navigate the supplied path and return all files (including hidden) as list"""
-    filepaths = []
-
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            filepath = os.path.join(root,file)
-            filepaths.append(filepath[len(path):])
-        for dir in dirs:
-            filepath = os.path.join(root,dir)
-            filepaths.append(filepath[len(path):] + "\\")
-
-    return filepaths
-
-def pretty_print(path_and_status, verbose: bool):
-    """using the colourise function in colour module, print the paths red or green"""
-    colour = Colour()
-    os.system("cls")
-    for path, status in path_and_status.items():
-        if status == "add":
-            colour.print(path,Colour.GREEN)
-        elif status == "del":
-            colour.print(path,Colour.RED)
-        elif status == "gon" and verbose:
-            colour.print(path,Colour.GRAY)
-        elif status == "nod":
-            print(path)
-
-def update_path_and_statuses(path_and_status, current_paths, new_paths):
-    """update the PaS dictionary with a new set of old and new paths"""
-    # look into the dictionary...
-    for path, status in path_and_status.items():
-        # ...remove really old items (anything that was removed last time)
-        if status == "del":
-            path_and_status.update({path:"gon"})
-        # ...set everything else now to removed
-        if status == "nod" or status == "add":
-            path_and_status.update({path:"del"})
-
-    # look at the new filepath array (path_delta), what is nod and add?
-    for new_path in new_paths:
-        if new_path in current_paths:
-            path_and_status.update({new_path:"nod"}) # both lists, so no diference
-        else:
-            path_and_status.update({new_path:"add"}) # only new, so add
-
-    # finally sort alphabetically
-    path_and_status_a2z = dict(sorted(path_and_status.items()))
-    return path_and_status_a2z
-
-def dir_path(string):
-    if os.path.isdir(full_path(string)): # also os.path.exists()
-        return string
+def normalised_path(input_path:str) -> str:
+    """returns a normalised "real"/"full" filepath for a given directory then checks its a valid directory"""
+    normalised_path:str = os.path.realpath(os.path.expanduser(input_path)) + "\\"
+    if os.path.isdir(normalised_path):
+        return normalised_path
     else:
         raise NotADirectoryError("Not a Valid Directory")
 
-def reset_pas_dict(path_and_status):
-    for k in path_and_status:
-        if path_and_status[k] == "add" or path_and_status[k] == "nod":
-            path_and_status[k] = "nod"
+def get_list_of_paths(given_directory:list, include_dirs:bool = True) -> list:
+    """returns a list of paths inside a given directory, optionally includes folders"""
+    paths:list = []
+    for root, dirs, files in os.walk(given_directory):
+        for file in files:
+            filepath = os.path.join(root,file)
+            paths.append(filepath[len(given_directory):]) # slice to remove root dir
+        if include_dirs: # only apparen directories to the list if flag is true
+            for dir in dirs:
+                filepath = os.path.join(root,dir)
+                paths.append(filepath[len(given_directory):] + "\\") # slice to remove root dir
+    paths.sort() # sorts alphabetically
+    return paths
+
+def create_path_to_status_dict(paths:list, statuses:list) -> dict:
+    """returns a dictionary with a list of paths (keys) and all statuses (values) set to 0/default"""
+    path_to_status_dict:dict = {}
+    for path in paths:
+        path_to_status_dict[path] = statuses[0] # 0 = "No Change"
+
+    path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
+    return path_to_status_dict
+
+def update_path_to_status_dict(path_to_status_dict:dict, new_paths:list) -> dict:
+    """returns (updates) the path_to_status_dict, adds new paths and changes status for each path"""
+    # set everything in the dictionary to removed or dead, after this we'll bring new in and no-change things back
+    for path in path_to_status_dict:
+        if path_to_status_dict[path] == "Removed" or path_to_status_dict[path] == "Dead":
+            path_to_status_dict[path] = "Dead"
+        elif path_to_status_dict[path] == "No Change" or path_to_status_dict[path] == "Added":
+            path_to_status_dict[path] = "Removed"
+
+    for np in new_paths:
+        if np in path_to_status_dict.keys() and path_to_status_dict[np] != "Dead":
+            path_to_status_dict[np] = "No Change"
         else:
-            path_and_status[k] = "gon"
+            path_to_status_dict[np] = "Added"
 
-    path_and_status_a2z = dict(sorted(path_and_status.items()))
-    return path_and_status_a2z
+    path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
+    return path_to_status_dict
 
-def main():
+def flush_path_to_status_dict(path_to_status_dict:dict) -> dict:
+    """flushes the path_to_status_dict, cleans up removes and changes adds to no change"""
+    # set everything in the dictionary to removed or dead, after this we'll bring new in and no-change things back
+    for path in path_to_status_dict:
+        if path_to_status_dict[path] == "Removed" or path_to_status_dict[path] == "Dead":
+            path_to_status_dict[path] = "Dead"
+        elif path_to_status_dict[path] == "No Change" or path_to_status_dict[path] == "Added":
+            path_to_status_dict[path] = "No Change"
+
+    path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
+    return path_to_status_dict
+
+def clear_the_screen() -> None:
+    if(platform.system().lower()=="windows"):
+        os.system("cls")
+    else:
+        os.system("clear")
+    return None
+
+def write_paths_to_screen(path_to_status_dict, show_dead:bool = False, clear_screen:bool = False, use_colours:bool = True) -> None:
+    """write the path_to_status_dict to screen, one line per path and colour=status"""
+    # Clear the screen
+    if clear_screen:
+        clear_the_screen() # platform indepedance
+
+    for path, status in path_to_status_dict.items():
+        if use_colours:
+            colour = Colour() # initialise a colour object, this will allow us to print in colour
+            if status == "No Change":
+                print(path)
+            elif status == "Added":
+                colour.print(path,Colour.GREEN)
+            elif status == "Removed":
+                colour.print(path,Colour.RED)
+            elif status == "Dead" and show_dead:
+                colour.print(path,Colour.GRAY)
+        else:
+            print(path)
+    logging.debug(str(path_to_status_dict))
+    return None
+
+def main() -> None:
     """main function, prints out the file paths, then starts a loop to check changes before printing"""
-
+    # setup argparse to accept path, verbose flag and tick float
     parser = argparse.ArgumentParser()
     parser.add_argument('path',
                         nargs='?',
-                        type=dir_path,
-                        help='file path to watch (default: current)'
+                        type=normalised_path, # cleanup the input path, expand if required, finish with "/"
+                        default=os.getcwd()+"\\", # use the current working directory as a default
+                        help='path to watch, otherwise use working directory'
                         )
-    parser.add_argument('-v', '--verbose',
+    parser.add_argument('-k', '--keep',
                         action='store_true',
-                        dest='verbose',
-                        help='preserve output'
+                        dest='keep', #bool
+                        help='keep deleted files on-screen'
                         )
     parser.add_argument('-t', '--tick',
                         dest='tick',
                         type=float,
-                        default=1.5,
-                        help='clock (refresh) tick rate'
+                        default=1.5, #default tick is 1.5 seconds, enough time for a 'git init'
+                        help='time we\'ll wait to print directory out after a change'
                         )
+    # include_dirs # omit directorys
+    # greyscale # omit colours
     args = parser.parse_args()
 
-    # if theres a path passed to the function, use it, otherwise use the current working directory
-    if args.path:
-        req_path = full_path(args.path)
-    else:
-        req_path = full_path(os.getcwd())
+    logging.info("path:\t\t" + str(args.path))
+    logging.info("keep:\t\t" + str(args.keep))
+    logging.info("tick:\t\t" + str(args.tick))
 
-    # calculate tick rate for refresh and rescan after difference
-    tick_refresh:int = math.floor(args.tick)/10
-    tick_rescan:float = args.tick
+    # setup timer/tickers
+    wait:float = math.floor(args.tick)/10 # tenth of a rounded down tick ( e.g. floor(1.5) == 1.0 )
+    logging.info("wait_nc:\t" + str(wait))
 
-    # build the dictionary of paths and statuses
-    path_and_status = {}
-    """ nod = no difference
-        add = added file
-        del = removed file
-        gon = gone forever
-    """
-    paths = scan_filepaths(req_path)
-    for path in paths:
-        path_and_status.update({path:"nod"})
+    # grab all the file/folder paths under "path" and define valid statuses
+    paths:list = get_list_of_paths(args.path)
+    statuses:list = ["No Change","Added","Removed","Dead"]
+    logging.info("paths:\t\t" + str(paths)[:250] + "...")
+    logging.info("statuses:\t" + str(statuses))
 
-    # sort and print the paths
-    path_and_status_a2z = dict(sorted(path_and_status.items()))
-    pretty_print(path_and_status_a2z, args.verbose)
+    # initialise the core dictionary mapping paths to statuses
+    path_to_status_dict:dict = create_path_to_status_dict(paths, statuses) # key is "path", value is "status"
+    logging.info("p_2_s_d:\t" + str(path_to_status_dict)[:250] + "...")
 
-    # pre-loop varible initialisation
-    foot_tap:int = 0
-    fresh:bool = False
+    # fresh flag used to check if changes to the list are shown in colour
+    show_changes_counter:int = 30 # stops flash on start
+    logging.info("shw_ch:\t\t" + str(show_changes_counter))
 
+    # pretty print (optional clear screen and colours) the list of paths
+    write_paths_to_screen(path_to_status_dict, args.keep, True, True)
+
+    # start an infinite loop printing the paths to screen
     while True:
-        # while in the loop, scan the filepaths again (new_paths) for a delta comparison
-        new_paths = scan_filepaths(req_path)
 
-        if paths != new_paths:
-            time.sleep(tick_rescan) # whoa theres a difference, lets pause a bit, then scan again
-            new_paths = scan_filepaths(req_path)
-            path_and_status = update_path_and_statuses(path_and_status, paths, new_paths)
-            pretty_print(path_and_status, args.verbose)
-            paths = new_paths
-            fresh = True
-            foot_tap = 0
+        # do nothing, we're waiting for a change to happen in the directory, default is 0.1 second
+        time.sleep(wait)
+
+        # check for a change
+        if paths != get_list_of_paths(args.path):
+            time.sleep(args.tick) # change, sleep for the tick for any changes to finish
+            paths = get_list_of_paths(args.path)
+            path_to_status_dict = update_path_to_status_dict(path_to_status_dict, paths)
+            write_paths_to_screen(path_to_status_dict, args.keep, True, True)
+            show_changes_counter = 0
 
         else:
-            time.sleep(tick_refresh)
-            foot_tap += 1
-            if fresh and foot_tap == (tick_rescan * 20):
-                path_and_status = reset_pas_dict(path_and_status)
-                pretty_print(path_and_status, args.verbose)
-                foot_tap = 0
-                fresh = False
+            if show_changes_counter <= 30:
+                show_changes_counter += 1
+            if show_changes_counter == 30:
+                path_to_status_dict = flush_path_to_status_dict(path_to_status_dict)
+                write_paths_to_screen(path_to_status_dict, args.keep, True, True)
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(message)s', level=logging.ERROR)
     #main function, wrapped in a try to catch Ctrl + C keyboard exception (while sleeping)
     try:
         main()
