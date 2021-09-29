@@ -24,11 +24,17 @@ def get_list_of_paths(given_directory:list, include_dirs:bool = True) -> list:
     paths.sort() # sorts alphabetically
     return paths
 
-def create_path_to_status_dict(paths:list, statuses:list) -> dict:
-    """returns a dictionary with a list of paths (keys) and all statuses (values) set to 0/default"""
+class Status:
+    SAME:str = "Same"
+    ADDED:str = "Added"
+    REMOVED:str = "Removed"
+    DEAD:str = "Dead"
+
+def create_path_to_status_dict(paths:list) -> dict:
+    """returns a dictionary with a list of paths (keys) and all statuses (values) set to SAME"""
     path_to_status_dict:dict = {}
     for path in paths:
-        path_to_status_dict[path] = statuses[0] # 0 = "No Change"
+        path_to_status_dict[path] = Status.SAME
 
     path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
     return path_to_status_dict
@@ -37,16 +43,16 @@ def update_path_to_status_dict(path_to_status_dict:dict, new_paths:list) -> dict
     """returns (updates) the path_to_status_dict, adds new paths and changes status for each path"""
     # set everything in the dictionary to removed or dead, after this we'll bring new in and no-change things back
     for path in path_to_status_dict:
-        if path_to_status_dict[path] == "Removed" or path_to_status_dict[path] == "Dead":
-            path_to_status_dict[path] = "Dead"
-        elif path_to_status_dict[path] == "No Change" or path_to_status_dict[path] == "Added":
-            path_to_status_dict[path] = "Removed"
+        if path_to_status_dict[path] == Status.REMOVED or path_to_status_dict[path] == Status.DEAD:
+            path_to_status_dict[path] = Status.DEAD
+        elif path_to_status_dict[path] == Status.SAME or path_to_status_dict[path] == Status.ADDED:
+            path_to_status_dict[path] = Status.REMOVED
 
     for np in new_paths:
-        if np in path_to_status_dict.keys() and path_to_status_dict[np] != "Dead":
-            path_to_status_dict[np] = "No Change"
+        if np in path_to_status_dict.keys() and path_to_status_dict[np] != Status.DEAD:
+            path_to_status_dict[np] = Status.SAME
         else:
-            path_to_status_dict[np] = "Added"
+            path_to_status_dict[np] = Status.ADDED
 
     path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
     return path_to_status_dict
@@ -55,10 +61,10 @@ def flush_path_to_status_dict(path_to_status_dict:dict) -> dict:
     """flushes the path_to_status_dict, cleans up removes and changes adds to no change"""
     # set everything in the dictionary to removed or dead, after this we'll bring new in and no-change things back
     for path in path_to_status_dict:
-        if path_to_status_dict[path] == "Removed" or path_to_status_dict[path] == "Dead":
-            path_to_status_dict[path] = "Dead"
-        elif path_to_status_dict[path] == "No Change" or path_to_status_dict[path] == "Added":
-            path_to_status_dict[path] = "No Change"
+        if path_to_status_dict[path] == Status.REMOVED or path_to_status_dict[path] == Status.DEAD:
+            path_to_status_dict[path] = Status.DEAD
+        elif path_to_status_dict[path] == Status.SAME or path_to_status_dict[path] == Status.ADDED:
+            path_to_status_dict[path] = Status.SAME
 
     path_to_status_dict = dict(sorted(path_to_status_dict.items())) # sort alphabetically
     return path_to_status_dict
@@ -79,16 +85,16 @@ def write_paths_to_screen(path_to_status_dict, show_dead:bool = False, clear_scr
     for path, status in path_to_status_dict.items():
         if use_colours:
             colour = Colour() # initialise a colour object, this will allow us to print in colour
-            if status == "No Change":
+            if status == Status.SAME:
                 print(path)
-            elif status == "Added":
+            elif status == Status.ADDED:
                 colour.print(path,Colour.GREEN)
-            elif status == "Removed":
+            elif status == Status.REMOVED:
                 colour.print(path,Colour.RED)
-            elif status == "Dead" and show_dead:
+            elif status == Status.DEAD and show_dead:
                 colour.print(path,Colour.GRAY)
         else: # no colour, so just print files we care about
-            if status == "No Change" or status == "Added":
+            if status == Status.SAME or status == Status.ADDED:
                 print(path)
     logging.debug(str(path_to_status_dict))
     return None
@@ -146,12 +152,10 @@ def main() -> None:
 
     # grab all the file/folder paths under "path" and define valid statuses
     paths:list = get_list_of_paths(args.path, show_dirs)
-    statuses:list = ["No Change","Added","Removed","Dead"]
     logging.info("paths:\t\t" + str(paths)[:250] + "...")
-    logging.info("statuses:\t" + str(statuses))
 
     # initialise the core dictionary mapping paths to statuses
-    path_to_status_dict:dict = create_path_to_status_dict(paths, statuses) # key is "path", value is "status"
+    path_to_status_dict:dict = create_path_to_status_dict(paths) # key is "path", value is "status"
     logging.info("p_2_s_d:\t" + str(path_to_status_dict)[:250] + "...")
 
     # fresh flag used to check if changes to the list are shown in colour
