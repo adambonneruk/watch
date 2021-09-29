@@ -114,22 +114,28 @@ def main() -> None:
                         default=1.5, #default tick is 1.5 seconds, enough time for a 'git init'
                         help='time we\'ll wait to print directory out after a change'
                         )
-    # include_dirs # omit directorys
+    parser.add_argument('-o', '--omit-dirs',
+                        action='store_true',
+                        dest='omit_dirs', #bool
+                        help='hide directories from the output (default behaviour is show)'
+                        )
     parser.add_argument('-c', '--colourless',
                         action='store_true',
                         dest='colourless', #bool
-                        help='disable the colour and pause before removing files'
+                        help='disable the colour rendering and file removal delay'
                         )
     args = parser.parse_args()
 
     # flags store as true, we'll flip them to make them symantically useful
     is_colour:bool = not args.colourless
+    show_dirs:bool = not args.omit_dirs
 
     # debug flags info
     logging.info("path:\t\t" + str(args.path))
     logging.info("keep:\t\t" + str(args.keep))
     logging.info("tick:\t\t" + str(args.tick))
     logging.info("colour:\t\t" + str(is_colour))
+    logging.info("dirs:\t\t" + str(show_dirs))
 
     # set the window title
     os.system("title watching " + args.path.lower())
@@ -139,7 +145,7 @@ def main() -> None:
     logging.info("wait_nc:\t" + str(wait))
 
     # grab all the file/folder paths under "path" and define valid statuses
-    paths:list = get_list_of_paths(args.path)
+    paths:list = get_list_of_paths(args.path, show_dirs)
     statuses:list = ["No Change","Added","Removed","Dead"]
     logging.info("paths:\t\t" + str(paths)[:250] + "...")
     logging.info("statuses:\t" + str(statuses))
@@ -162,9 +168,9 @@ def main() -> None:
         time.sleep(wait)
 
         # check for a change
-        if paths != get_list_of_paths(args.path):
+        if paths != get_list_of_paths(args.path, show_dirs):
             time.sleep(args.tick) # change, sleep for the tick for any changes to finish
-            paths = get_list_of_paths(args.path)
+            paths = get_list_of_paths(args.path, show_dirs)
             path_to_status_dict = update_path_to_status_dict(path_to_status_dict, paths)
             write_paths_to_screen(path_to_status_dict, args.keep, True, is_colour)
             if is_colour: # for colour apps we reset the timer ready to refresh, colourless is static
