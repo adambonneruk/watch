@@ -115,12 +115,21 @@ def main() -> None:
                         help='time we\'ll wait to print directory out after a change'
                         )
     # include_dirs # omit directorys
-    # greyscale # omit colours
+    parser.add_argument('-c', '--colourless',
+                        action='store_true',
+                        dest='colourless', #bool
+                        help='disable the colour and pause before removing files'
+                        )
     args = parser.parse_args()
 
+    # flags store as true, we'll flip them to make them symantically useful
+    is_colour:bool = not args.colourless
+
+    # debug flags info
     logging.info("path:\t\t" + str(args.path))
     logging.info("keep:\t\t" + str(args.keep))
     logging.info("tick:\t\t" + str(args.tick))
+    logging.info("colour:\t\t" + str(is_colour))
 
     # set the window title
     os.system("title watching " + args.path.lower())
@@ -144,7 +153,7 @@ def main() -> None:
     logging.info("shw_ch:\t\t" + str(show_changes_counter))
 
     # pretty print (optional clear screen and colours) the list of paths
-    write_paths_to_screen(path_to_status_dict, args.keep, True, True)
+    write_paths_to_screen(path_to_status_dict, args.keep, True, is_colour)
 
     # start an infinite loop printing the paths to screen
     while True:
@@ -157,15 +166,16 @@ def main() -> None:
             time.sleep(args.tick) # change, sleep for the tick for any changes to finish
             paths = get_list_of_paths(args.path)
             path_to_status_dict = update_path_to_status_dict(path_to_status_dict, paths)
-            write_paths_to_screen(path_to_status_dict, args.keep, True, True)
-            show_changes_counter = 0
+            write_paths_to_screen(path_to_status_dict, args.keep, True, is_colour)
+            if is_colour: # for colour apps we reset the timer ready to refresh, colourless is static
+                show_changes_counter = 0
 
         else:
             if show_changes_counter <= 30:
                 show_changes_counter += 1
             if show_changes_counter == 30:
                 path_to_status_dict = flush_path_to_status_dict(path_to_status_dict)
-                write_paths_to_screen(path_to_status_dict, args.keep, True, True)
+                write_paths_to_screen(path_to_status_dict, args.keep, True, is_colour)
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(message)s', level=logging.ERROR)
