@@ -87,8 +87,9 @@ def write_paths_to_screen(path_to_status_dict, show_dead:bool = False, clear_scr
                 colour.print(path,Colour.RED)
             elif status == "Dead" and show_dead:
                 colour.print(path,Colour.GRAY)
-        else:
-            print(path)
+        else: # no colour, so just print files we care about
+            if status == "No Change" or status == "Added":
+                print(path)
     logging.debug(str(path_to_status_dict))
     return None
 
