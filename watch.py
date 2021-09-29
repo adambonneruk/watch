@@ -121,6 +121,9 @@ def main() -> None:
     logging.info("keep:\t\t" + str(args.keep))
     logging.info("tick:\t\t" + str(args.tick))
 
+    # set the window title
+    os.system("title watching " + args.path.lower())
+
     # setup timer/tickers
     wait:float = math.floor(args.tick)/10 # tenth of a rounded down tick ( e.g. floor(1.5) == 1.0 )
     logging.info("wait_nc:\t" + str(wait))
