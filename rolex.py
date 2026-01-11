@@ -1,10 +1,14 @@
-"""watch a given directory for file changes using the command line, useful for demos"""
+""" rolex, e.g. a really good watch
+    watch a given directory for file changes using the command line, useful for demos
+"""
 import os, platform, sys, time, argparse, math, logging
 from colour import Colour
 
 def normalised_path(input_path:str) -> str:
     """returns a normalised "real"/"full" filepath for a given directory then checks its a valid directory"""
-    normalised_path:str = os.path.realpath(os.path.expanduser(input_path)) + "\\"
+    normalised_path:str = os.path.realpath(os.path.expanduser(input_path))
+    if not normalised_path.endswith(os.sep):
+        normalised_path = normalised_path + os.sep
     if os.path.isdir(normalised_path):
         return normalised_path
     else:
@@ -20,7 +24,7 @@ def get_list_of_paths(given_directory:list, include_dirs:bool = True) -> list:
         if include_dirs: # only apparen directories to the list if flag is true
             for dir in dirs:
                 filepath = os.path.join(root,dir)
-                paths.append(filepath[len(given_directory):] + "\\") # slice to remove root dir
+                paths.append(filepath[len(given_directory):] + os.sep) # slice to remove root dir
     paths.sort() # sorts alphabetically
     return paths
 
@@ -106,7 +110,7 @@ def main() -> None:
     parser.add_argument('path',
                         nargs='?',
                         type=normalised_path, # cleanup the input path, expand if required, finish with "/"
-                        default=os.getcwd()+"\\", # use the current working directory as a default
+                        default=os.getcwd()+os.sep, # use the current working directory as a default
                         help='path to watch, otherwise use working directory'
                         )
     parser.add_argument('-k', '--keep',
